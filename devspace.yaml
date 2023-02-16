@@ -1,0 +1,107 @@
+version: v1beta9
+images:
+  app:
+    image: gitlab.com/wend//localforge
+    tags:
+    - latest
+    injectRestartHelper: true
+    appendDockerfileInstructions:
+    - USER root
+    rebuildStrategy: ignoreContextChanges
+    build:
+      disabled: true
+  mysql:
+    image: mysql
+    tags:
+    - latest
+    createPullSecret: true
+    build:
+      disabled: true
+  phpmyadmin:
+    image: phpmyadmin
+    tags:
+    - latest
+    createPullSecret: true
+    build:
+      disabled: true
+deployments:
+- name: mysql
+  helm:
+    componentChart: true
+    values:
+      containers:
+      - env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: "${DB_PASSWORD}"
+        - name: MYSQL_DATABASE
+          value: "${DB_DATABASE}"
+        - name: MYSQL_USER
+          value: "${DB_USERNAME}"
+        - name: MYSQL_PASSWORD
+          value: "${DB_PASSWORD}"
+        - name: MYSQL_ALLOW_EMPTY_PASSWORD
+          value: "yes"
+        image: mysql:latest
+      service:
+        ports:
+        - port: 3306
+- name: app
+  helm:
+    componentChart: true
+    values:
+      containers:
+      - image: gitlab.com/wend//fareharbor-api
+        volumeMounts:
+        - containerPath: /var/www/html
+          volume:
+            name: app-volume
+            readOnly: false
+      volumes:
+      - name: app-volume
+        size: "5Gi"
+      service:
+        ports:
+        - port: 8000
+dev:
+  ports:
+  - imageName: app
+    forward:
+    - port: 8000
+      remotePort: 80
+  - imageName: mysql
+    forward:
+    - port: 3306
+      remotePort: 3306
+  open:
+  - url: http://localhost:80
+  sync:
+  - imageName: app
+    excludePaths:
+    - .git/
+    uploadExcludePaths:
+    - devspace.yaml
+    - .devspace/
+    - devspace.yaml
+    - .devspace/
+    onUpload:
+      restartContainer: true
+profiles:
+- name: production
+  patches:
+  - op: remove
+    path: images.app.appendDockerfileInstructions
+  - op: remove
+    path: images.app.injectRestartHelper
+  - op: remove
+    path: images.app.rebuildStrategy
+- name: interactive
+  patches:
+  - op: add
+    path: dev.interactive
+    value:
+      defaultEnabled: true
+  - op: add
+    path: images.app.entrypoint
+    value:
+    - sleep
+    - "9999999999"

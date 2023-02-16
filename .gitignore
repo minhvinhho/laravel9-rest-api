@@ -1,0 +1,30 @@
+/node_modules
+/storage/*.key
+/public/storage
+/vendor
+/nbproject
+
+.env
+.env.testing
+
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log
+
+build/
+.phpintel/
+.phplint-cache
+
+# Ignore DevSpace cache and log folder
+.devspace/
+database/seeders/UserSeeder.php
+.package-lock.json
+
+# ignore phplint
+build/
+.phplint-cache
+
+# ignore .scribe
+.scribe
